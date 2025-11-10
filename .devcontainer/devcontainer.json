@@ -4,30 +4,31 @@
   "features": {
     "ghcr.io/devcontainers-extra/features/uv": {},
     "ghcr.io/devcontainers-extra/features/starship:1": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {
-      "installZsh": true,
-      "installOhMyZsh": true,
-      "upgradePackages": true,
-      "username": "vscode",
-      "userUid": "automatic",
-      "userGid": "automatic"
-    },
     "ghcr.io/devcontainers-extra/features/zsh-plugins:0": {
       "plugins": "zsh-autosuggestions zsh-syntax-highlighting",
       "omzPlugins": "https://github.com/zsh-users/zsh-autosuggestions https://github.com/zsh-users/zsh-syntax-highlighting"
     }
   },
-  "postCreateCommand": "uv python install pypy@3.10 && uv venv --clear .venv-cpython --python 3.12 && uv venv --clear .venv-pypy --python pypy@3.10",
+  "postCreateCommand": {
+    "setup-shell": "echo 'eval \"$(starship init zsh)\"' >> ~/.zshrc && mkdir -p ~/.config && starship preset catppuccin-powerline -o ~/.config/starship.toml",
+    "install-python": "uv python install pypy@3.10",
+    "create-venvs": "uv venv --clear .venv-cpython --python 3.12 && uv venv --clear .venv-pypy --python pypy@3.10 && echo 'source .venv-cpython/bin/activate' >> ~/.zshrc",
+    "install-nerd-font": "sudo apt-get update && sudo apt-get install -y fontconfig curl xz-utils && sudo mkdir -p /usr/local/share/fonts/jetbrainsmono && cd /tmp && curl -OL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz && tar -xf JetBrainsMono.tar.xz && sudo mv *.ttf /usr/local/share/fonts/jetbrainsmono/ && sudo fc-cache -fv"
+  },
   "remoteEnv": {
     "PATH": "${containerEnv:PATH}:/home/vscode/.local/bin"
   },
   "customizations": {
     "vscode": {
       "extensions": [
-        "ms-python.python"
+        "ms-python.python",
+        "tal7aouy.icons"
       ],
       "settings": {
         "editor.tabSize": 4,
+        "workbench.iconTheme": "vs-nomo-dark",
+        "python.defaultInterpreterPath": ".venv-cpython/bin/python",
+        "terminal.integrated.fontFamily": "JetBrainsMono Nerd Font",
         "terminal.integrated.defaultProfile.linux": "zsh",
         "terminal.integrated.profiles.linux": {
           "bash": {
