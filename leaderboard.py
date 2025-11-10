@@ -8,6 +8,7 @@ import sys
 
 
 WITH_VERIFICATION = True
+TIMES = defaultdict(list)
 
 def get_entries(sys_args) -> tuple[str, list[pathlib.Path]]:
     def print_entries(path: pathlib.Path):
@@ -38,6 +39,8 @@ def get_entries(sys_args) -> tuple[str, list[pathlib.Path]]:
 
 def make_ground_truth(txt_file):
     print("\nGenerating ground truths for verification...")
+    tic = timer()
+
     df = pl.scan_csv(
         txt_file,
         separator=";",
@@ -59,6 +62,12 @@ def make_ground_truth(txt_file):
     result = []
     for data in grouped.iter_rows():
         result.append(f"{data[0]}={data[1]/10:.1f}/{data[2]/10:.1f}/{data[3]/10:.1f}")
+    
+    toc = timer()
+
+    print(f"Ground truth generated in {toc - tic:.4f} seconds")
+    TIMES["ground_truth"].append(toc - tic)
+
     return result
 
 def main(measurement_file, entries, ground_truth, python_executable="python") -> dict[pathlib.Path, list[float]]:
@@ -69,8 +78,6 @@ def main(measurement_file, entries, ground_truth, python_executable="python") ->
         for l, r in zip(ground_truth, result):
             if l != r:
                 yield f"{l}  !=  {r}"
-
-    times = defaultdict(list)
 
     print(f"\nRunning entries with python: {python_executable}")
     for entry in entries:
@@ -99,9 +106,9 @@ def main(measurement_file, entries, ground_truth, python_executable="python") ->
                     break
                 else:
                     print(f"entry {entry} run {i+1} successful in {toc - tic:.4f} seconds")
-                    times[entry].append(toc - tic)
+                    TIMES[entry].append(toc - tic)
     
-    return times
+    return TIMES
 
 def print_leaderboard(times: dict[pathlib.Path, list[float]]):
     print(f"\n========== leaderboard ==========")
