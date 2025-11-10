@@ -11,7 +11,7 @@
   },
   "postCreateCommand": {
     "install-pypy": "uv python install pypy@3.10",
-    "create-venvs": "uv venv --clear .venv-cpython --python 3.12 && uv venv --clear .venv-pypy --python pypy@3.10 && echo 'source .venv-cpython/bin/activate' >> ~/.zshrc",
+    "create-venvs": "uv venv --clear .venv-cpython --python 3.12 && uv venv --clear .venv-pypy --python pypy@3.10 && uv pip install -r requirements.txt --python .venv-cpython/bin/python && echo 'source .venv-cpython/bin/activate' >> ~/.zshrc",
     "install-nerd-font": "sudo apt-get update && sudo apt-get install -y fontconfig curl xz-utils && sudo mkdir -p /usr/local/share/fonts/jetbrainsmono && cd /tmp && curl -OL https://github.com/ryanoasis/nerd-fonts/releases/latest/download/JetBrainsMono.tar.xz && tar -xf JetBrainsMono.tar.xz && rm JetBrainsMono.tar.xz && sudo mv *.ttf /usr/local/share/fonts/jetbrainsmono/ && sudo fc-cache -fv",
     "setup-shell": "echo 'eval \"$(starship init zsh)\"' >> ~/.zshrc && mkdir -p ~/.config && starship preset catppuccin-powerline -o ~/.config/starship.toml"
   },
