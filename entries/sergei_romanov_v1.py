@@ -10,7 +10,6 @@ import sys
 import os
 import multiprocessing as mp
 from functools import reduce
-from decimal import Decimal, ROUND_HALF_DOWN
 
 def get_file_chunks(file_name: str, max_cpu: int = 8) -> tuple[int, list[tuple[str, int, int]]]:
     """
@@ -105,14 +104,11 @@ def main(file_name: str):
     
     # Format and print output
     for location, stats in sorted(final_result.items()):
-        min_temp, max_temp, sum_temp, count = stats
-        if count > 0:
-            # avg_temp = float(Decimal(sum_temp / count).quantize(Decimal('0.1'), rounding=ROUND_HALF_DOWN))
-            
-            avg_temp = float(sum_temp / count)
+        if stats[3] > 0:
+            avg_temp = (stats[2]/stats[3])
         else:
             avg_temp = 0
-        print(f"{location.decode('utf-8')}={min_temp/10:.1f}/{avg_temp/10:.1f}/{max_temp/10:.1f}", end="\n")
+        print(f"{location.decode('utf-8')}={stats[0]/10:.1f}/{avg_temp/10:.1f}/{stats[1]/10:.1f}", end="\n")
 
 if __name__ == "__main__":
     main(sys.argv[1])
