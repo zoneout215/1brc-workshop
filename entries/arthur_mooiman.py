@@ -1,6 +1,5 @@
 # TODO: Rename this file to firstname_lastname.py
 import sys
-from pathlib import Path
 
 def print_measurements(cities: dict) -> None:
     """
@@ -66,6 +65,5 @@ def main(measurements_file_path: str) -> dict:
     return cities
 
 if __name__ == '__main__':
-    # cities = main(Path("measurements/measurements-1_000_000.txt"))
     cities = main(sys.argv[1])
     print_measurements(cities)
