@@ -3,8 +3,6 @@
 # This script uses:
 #  - Multiprocessing for parallelism
 #  - Garbage collection control for performance
-#  - Optimal blocksize calculation
-#  - Array with double data type for memory efficiency
 #
 # References: 
 # - Italo Nesi https://github.com/ifnesi/1brc 

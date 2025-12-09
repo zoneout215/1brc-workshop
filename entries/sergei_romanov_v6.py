@@ -1,16 +1,18 @@
 #!/usr/bin/python3
 
-# This script uses
-#  - Kahan summation for accurate floating-point addition
+# This script uses:
 #  - Multiprocessing for parallelism
 #  - Garbage collection control for performance
 #  - Optimal blocksize calculation
-#  - Array with double data type for memory efficiency 
+#
+# References: 
+# - Italo Nesi https://github.com/ifnesi/1brc 
+
 import sys
+import cProfile
 import os
 import multiprocessing as mp
-from array import array
-from functools import partial
+# from array import array
 from gc import disable as gc_disable, enable as gc_enable
 
 
@@ -45,12 +47,13 @@ def get_optimal_blocksize(file_name: str, cpu_count: int, file_size: int) -> int
 def get_file_chunks(
     file_name: str,
     max_cpu: int = 8,
-) -> list[int, list[tuple[str, int, int]]]:
+) -> list[int, list[tuple[str, int, int, int]]]:
     """Split file into chunks"""
     cpu_count = min(max_cpu, mp.cpu_count())
 
     file_size = os.path.getsize(file_name)
     chunk_size = file_size // cpu_count
+    blocksize =  1024 * 1024 * 1
 
     start_end = list()
     with open(file_name, mode="r+b") as f:
@@ -82,6 +85,7 @@ def get_file_chunks(
                     file_name,
                     chunk_start,
                     chunk_end,
+                    blocksize,
                 )
             )
 
@@ -134,7 +138,7 @@ def _process_file_chunk(
                     tail = data[index:]
                     break
 
-                temperature = float(data[index:newline])
+                temperature = int(float(data[index:newline]) * 10)
                 index = newline + 1
                 
                 try:
@@ -143,16 +147,12 @@ def _process_file_chunk(
                         stats[0] = temperature
                     if temperature > stats[1]:
                         stats[1] = temperature
-                    
-                    # Kahan summation
-                    y = temperature - stats[4]
-                    t = stats[2] + y
-                    stats[4] = (t - stats[2]) - y
-                    stats[2] = t
+                    stats[2] +=temperature 
                     stats[3] += 1
                 except KeyError:
                     # array('d', [min, max, sum, count, compensation])
-                    result[location] = array('d', [temperature, temperature, temperature, 1, 0.0])
+                    result[location] = [temperature, temperature, temperature, 1]
+                    # result[location] = array('i', [temperature, temperature, temperature, 1])
 
                 location = None
         gc_enable()
@@ -166,13 +166,10 @@ def process_file(
 ) -> dict:
     """Process data file"""
 
-    opt_size = get_optimal_blocksize(file, cpu_count, os.path.getsize(file))
-    partial_chunk_process = partial(_process_file_chunk, blocksize = opt_size)
     with mp.Pool(cpu_count) as p:
         # Run chunks in parallel
         chunk_results = p.starmap(
-            partial_chunk_process,
-            start_end,
+            _process_file_chunk, start_end
         )
 
     # Combine all results from all chunks with Kahan summation
@@ -187,22 +184,13 @@ def process_file(
                     stats[0] = measurements[0]
                 if measurements[1] > stats[1]:
                     stats[1] = measurements[1]
-                
-                # Kahan summation when merging
-                y = measurements[2] - stats[4]
-                t = stats[2] + y
-                stats[4] = (t - stats[2]) - y
-                stats[2] = t
+                stats[2] += measurements[2]
                 stats[3] += measurements[3]
 
     # Print final results
     for location, measurements in sorted(result.items()):
-        if measurements[3] > 0:
-            avg_temp = round(measurements[2] / measurements[3], 1)
-        else:
-            avg_temp = 0.0
         print(
-            f"{location.decode('utf-8')}={measurements[0]:.1f}/{avg_temp:.1f}/{measurements[1]:.1f}",
+            f"{location.decode('utf-8')}={measurements[0]/10:.1f}/{(measurements[2] / measurements[3] /10) if measurements[3] !=0 else 0:.1f}/{measurements[1] /10:.1f}",
             end="\n",
         )
 
